@@ -1,32 +1,50 @@
 const Usuario = require('../models/usuario.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const validator = require('validator');  // npm install validator
 require('dotenv').config();
 
 exports.registrarUsuario = async (req, res) => {
   try {
-    const { correo, clave, rol } = req.body;
+    const { nombre, correo, clave, edad, genero, rol } = req.body;
 
-    if (!correo || !clave) {
-      return res.status(400).json({ mensaje: 'Correo y clave son obligatorios.' });
+    // Validaciones básicas
+    if (!nombre || !correo || !clave || !edad || !genero) {
+      return res.status(400).json({ mensaje: 'Todos los campos son obligatorios.' });
     }
 
-    if (clave.length < 6 || !/\d/.test(clave) || !/[a-zA-Z]/.test(clave)) {
-      return res.status(400).json({ mensaje: 'La clave debe tener mínimo 6 caracteres, letras y números.' });
+    if (!validator.isEmail(correo)) {
+      return res.status(400).json({ mensaje: 'Correo no es válido.' });
     }
 
+    if (clave.length < 6 || clave.length > 12 || !/\d/.test(clave) || !/[a-zA-Z]/.test(clave)) {
+      return res.status(400).json({ mensaje: 'La clave debe tener entre 6 y 12 caracteres, con letras y números.' });
+    }
+
+    if (typeof edad !== 'number' || edad < 1 || edad > 120) {
+      return res.status(400).json({ mensaje: 'Edad inválida.' });
+    }
+
+    if (!['Masculino', 'Femenino', 'Otro'].includes(genero)) {
+      return res.status(400).json({ mensaje: 'Género inválido.' });
+    }
+
+    // Verificar si ya existe el correo
     const usuarioExistente = await Usuario.findOne({ correo });
     if (usuarioExistente) {
       return res.status(400).json({ mensaje: 'El correo ya está registrado.' });
     }
 
+    // Hash de la clave
     const claveHash = await bcrypt.hash(clave, 10);
 
     const nuevoUsuario = new Usuario({
+      nombre,
       correo,
       clave: claveHash,
-      rol: rol === 'operador' ? 'operador' : 'invitado'
-      //rol: 'invitado'
+      edad,
+      genero,
+      rol: rol === 'operador' ? 'operador' : 'invitado'  // Mantener lógica de rol
     });
 
     await nuevoUsuario.save();

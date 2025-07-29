@@ -8,6 +8,6 @@ router.use(verificarToken);
 router.post('/', mascotaController.crearMascota);
 router.get('/', mascotaController.listarMascotasUsuario);
 router.delete('/:id', mascotaController.eliminarMascota);
-router.put('/:id', verificarToken, mascotaController.actualizarMascota);
+router.put('/:id', mascotaController.actualizarMascota);
 
 module.exports = router;
